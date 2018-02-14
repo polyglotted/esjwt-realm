@@ -13,10 +13,14 @@ jobs:
           name: Setup Build Variables
           command: |
             echo 'export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"' >> $BASH_ENV
+      - run:
+          name: Echo Me
+          command: |
+            echo $JAVA_HOME
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "pom.xml" }}
+          - v1-dependencies-{{ checksum "build.gradle" }}
           - v1-dependencies-
       - run:
           name: Install Dependencies
@@ -24,7 +28,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "pom.xml" }}
+          key: v1-dependencies-{{ checksum "build.gradle" }}
 
       - run:
           name: Gradle Check
@@ -33,8 +37,9 @@ jobs:
       - run:
           name: Collect Test Artifacts
           command: |
-            mkdir -p ${artifact_dir}/reports/
-            find . -type f -regex ".*/build/reports/.*xml" -exec cp {} ${artifact_dir}/reports/ \;
+            mkdir -p ${artifact_dir}/reports/ ${artifact_dir}/output/
+            cp -r build/reports ${artifact_dir}/reports/
+            cp build/resources/main/* ${artifact_dir}/output/
           when: always
       - store_artifacts:
           path: tmp/artifacts
