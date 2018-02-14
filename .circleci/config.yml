@@ -1,0 +1,40 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:9-jdk
+    working_directory: ~/esjwt-realm
+    environment:
+      artifact_dir: "tmp/artifacts"
+
+    steps:
+      - checkout
+      - run:
+          name: Setup Build Variables
+          command: |
+            echo 'export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"' >> $BASH_ENV
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "pom.xml" }}
+          - v1-dependencies-
+      - run:
+          name: Install Dependencies
+          command: gradle clean buildZip
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run:
+          name: Gradle Check
+          command: gradle clean check
+
+      - run:
+          name: Collect Test Artifacts
+          command: |
+            mkdir -p ${artifact_dir}/reports/
+            find . -type f -regex ".*/build/reports/.*xml" -exec cp {} ${artifact_dir}/reports/ \;
+          when: always
+      - store_artifacts:
+          path: tmp/artifacts

@@ -1,0 +1,27 @@
+#project files
+.DS_Store
+.idea
+*.iml
+target/
+build/
+do_not_git/
+DoNotGit*
+.idea/
+.gradle/
+*.iml
+*.ipr
+*.iws
+*-execution-hints.log
+*-execution-times.log
+docs/html/
+docs/build.log
+/tmp/
+backwards/
+html_docs
+.vagrant/
+
+dependency-reduced-pom.xml
+classes
+gradle/
+gradlew
+gradlew.bat

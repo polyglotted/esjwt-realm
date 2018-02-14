@@ -1,0 +1,5 @@
+SteelEye
+Copyright 2017 SteelEye
+
+This product includes software developed by The Apache Software
+Foundation (http://www.apache.org/) and Elastic (http://elastic.co).
