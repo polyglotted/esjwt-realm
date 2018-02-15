@@ -43,8 +43,8 @@ import static io.polyglotted.esjwt.impl.CommonUtil.parseJson;
 import static io.polyglotted.esjwt.impl.CommonUtil.readFrom;
 
 public abstract class JwtVerifier {
-    private static final String RSA = "RSA";
-    private static final String RSA_ALGO = "SHA256withRSA";
+    static final String RSA = "RSA";
+    static final String RSA_ALGO = "SHA256withRSA";
 
     public static void verifyRs256(String jwksUrl, JsonWebToken token) throws VerificationException {
         Map<String, Object> key = fetchJwks(jwksUrl).get(token.keyCode());
@@ -69,7 +69,7 @@ public abstract class JwtVerifier {
         }
     }
 
-    private static PublicKey getPublicKey(String type, String nVal, String eVal) throws VerificationException {
+    static PublicKey getPublicKey(String type, String nVal, String eVal) throws VerificationException {
         if (!RSA.equalsIgnoreCase(type)) { return null; }
         try {
             KeyFactory kf = KeyFactory.getInstance(RSA);

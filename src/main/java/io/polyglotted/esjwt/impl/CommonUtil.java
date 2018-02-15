@@ -73,9 +73,7 @@ public abstract class CommonUtil {
 
     private static <T> T mapGet(Map<String, Object> map, String prop) { return (T) map.get(prop); }
 
-    public static String join(String a, String b) {
-        return notNullOrEmpty(a) ? (notNullOrEmpty(b) ? a + " " + b : a) : (notNullOrEmpty(b) ? b : "");
+    static Long asTime(Map<String, Object> map, String prop) {
+        Integer integer = (Integer) map.get(prop); return integer == null ? null : integer.longValue() * 1000;
     }
-
-    private static boolean notNullOrEmpty(String str) { return str != null && str.length() > 0; }
 }

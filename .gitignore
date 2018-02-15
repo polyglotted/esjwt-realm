@@ -1,7 +1,5 @@
 #project files
 .DS_Store
-.idea
-*.iml
 target/
 build/
 do_not_git/

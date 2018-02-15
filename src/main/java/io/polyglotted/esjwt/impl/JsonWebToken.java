@@ -19,11 +19,13 @@
 package io.polyglotted.esjwt.impl;
 
 import lombok.experimental.Accessors;
+import org.elasticsearch.xpack.core.security.user.User;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import static io.polyglotted.esjwt.impl.CommonUtil.asTime;
 import static io.polyglotted.esjwt.impl.CommonUtil.deepGet;
 import static io.polyglotted.esjwt.impl.CommonUtil.parseJson;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -32,6 +34,11 @@ import static org.apache.commons.codec.binary.Base64.decodeBase64;
 
 @Accessors(fluent = true)
 public final class JsonWebToken {
+    private static Pattern EMAIL_REGEX = Pattern.compile("(?:[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]" +
+        "+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(" +
+        "?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[0" +
+        "1]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[A-Za-z0-9-]*[A-Za-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\" +
+        "x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])");
     private final Map<String, Object> header;
     private final Map<String, Object> payload;
     private final byte[] contentBytes;
@@ -41,30 +48,32 @@ public final class JsonWebToken {
         this.header = header; this.payload = payload; this.contentBytes = contentBytes; this.signatureBytes = signatureBytes;
     }
 
-    public static JsonWebToken parse(String token) throws IOException {
+    public static JsonWebToken parseJwt(String token) throws IOException {
         String[] parts = token.split("\\.");
         if (parts.length != 3) { throw new IllegalArgumentException("invalid token parts"); }
         return new JsonWebToken(parseJson(decodeBase64(parts[0])), parseJson(decodeBase64(parts[1])),
             String.format(ENGLISH, "%s.%s", parts[0], parts[1]).getBytes(UTF_8), decodeBase64(parts[2]));
     }
 
-    public String keyCode() { return deepGet(header, "alg") + ":" + deepGet(header, "kid"); }
+    String keyCode() { return deepGet(header, "alg") + ":" + deepGet(header, "kid"); }
 
-    public byte[] contentBytes() { return this.contentBytes; }
+    byte[] contentBytes() { return this.contentBytes; }
 
-    public byte[] signatureBytes() { return this.signatureBytes; }
+    byte[] signatureBytes() { return this.signatureBytes; }
 
-    public String issuer() { return deepGet(payload, "iss"); }
+    Long expiresAt() { return asTime(payload, "exp"); }
 
-    public String subject() { return deepGet(payload, "sub"); }
+    Long notBefore() { return asTime(payload, "nbf"); }
 
-    public List<String> audience() { return deepGet(payload, "aud"); }
+    Long issuedAt() { return asTime(payload, "iat"); }
 
-    public Long expiresAt() { return deepGet(payload, "exp"); }
+    User buildUser() {
+        return new User(userId(payload), new String[]{"jwt-user"}, null, email(payload), payload, true);
+    }
 
-    public Long notBefore() { return deepGet(payload, "nbf"); }
+    private static String userId(Map<String, Object> claims) { return (String) claims.getOrDefault("uid", claims.get("sub")); }
 
-    public Long issuedAt() { return deepGet(payload, "iat"); }
-
-    public String jwtId() { return deepGet(payload, "jti"); }
+    private static String email(Map<String, Object> claims) {
+        String email = (String) claims.getOrDefault("sub", ""); return EMAIL_REGEX.matcher(email).matches() ? email : null;
+    }
 }
