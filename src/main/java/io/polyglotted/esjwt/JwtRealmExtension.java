@@ -18,17 +18,18 @@
  */
 package io.polyglotted.esjwt;
 
+import io.polyglotted.esjwt.realm.JwtAuthFailureHandler;
 import io.polyglotted.esjwt.realm.JwtRealm;
 import io.polyglotted.esjwt.realm.JwtRealmFactory;
+import org.apache.http.HttpHeaders;
 import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.xpack.core.extensions.XPackExtension;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationFailureHandler;
-import org.elasticsearch.xpack.core.security.authc.DefaultAuthenticationFailureHandler;
 import org.elasticsearch.xpack.core.security.authc.Realm;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -38,13 +39,13 @@ public class JwtRealmExtension extends XPackExtension {
 
     @Override public String name() { return JwtRealm.TYPE; }
 
-    @Override public String description() { return "Okta Realm Extension"; }
+    @Override public String description() { return "JWT Realm Extension"; }
 
     /**
      * Returns a collection of header names that will be used by this extension. This is necessary to ensure the headers are copied from
      * the incoming request and made available to the realm.
      */
-    @Override public Collection<String> getRestHeaders() { return Arrays.asList(JwtRealm.AUTH_HEADER); }
+    @Override public Collection<String> getRestHeaders() { return Collections.singleton(HttpHeaders.AUTHORIZATION); }
 
     /**
      * Returns a map of the custom realms provided by this extension. The first parameter is the string representation of the realm type;
@@ -60,8 +61,8 @@ public class JwtRealmExtension extends XPackExtension {
     }
 
     /**
-     * Returns the defaul {@link org.elasticsearch.xpack.core.security.authc.DefaultAuthenticationFailureHandler}
+     * Returns the custom implementaion {@link JwtAuthFailureHandler}
      */
     @Override
-    public AuthenticationFailureHandler getAuthenticationFailureHandler() { return new DefaultAuthenticationFailureHandler(); }
+    public AuthenticationFailureHandler getAuthenticationFailureHandler() { return new JwtAuthFailureHandler(); }
 }

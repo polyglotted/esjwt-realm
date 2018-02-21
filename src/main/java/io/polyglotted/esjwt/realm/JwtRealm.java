@@ -21,8 +21,8 @@ package io.polyglotted.esjwt.realm;
 import io.polyglotted.esjwt.impl.JsonWebToken;
 import io.polyglotted.esjwt.impl.JwtValidator.ValidityException;
 import io.polyglotted.esjwt.impl.JwtVerifier.VerificationException;
+import org.apache.http.HttpHeaders;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationResult;
@@ -36,14 +36,12 @@ import java.io.IOException;
 import static io.polyglotted.esjwt.impl.JsonWebToken.parseJwt;
 import static io.polyglotted.esjwt.impl.JwtValidator.validateJwt;
 import static io.polyglotted.esjwt.impl.JwtVerifier.verifyRs256;
+import static io.polyglotted.esjwt.realm.BearerToken.bearerToken;
 import static java.time.Clock.systemUTC;
-import static java.util.Objects.requireNonNull;
 
 public class JwtRealm extends Realm {
     /* The type of the realm. This is defined as a static final variable to prevent typos */
     public static final String TYPE = "esjwt";
-    public static final String AUTH_HEADER = "X-Authorization";
-    private final boolean untrusted;
     private final String jwksUrl;
 
     /**
@@ -52,10 +50,10 @@ public class JwtRealm extends Realm {
      *
      * @param config the configuration specific to this realm
      */
-    public JwtRealm(RealmConfig config) {
+    JwtRealm(RealmConfig config) {
         super(TYPE, config);
-        this.untrusted = config.settings().getAsBoolean("untrusted", false);
         this.jwksUrl = config.settings().get("jwksUrl");
+        logger.info("loaded x-pack plugin [esjwt]");
     }
 
     /**
@@ -75,8 +73,8 @@ public class JwtRealm extends Realm {
      * @return the {@link AuthenticationToken} if possible to extract or <code>null</code>
      */
     @Override public AuthenticationToken token(ThreadContext context) {
-        String bearer = context.getHeader(AUTH_HEADER);
-        return bearer != null && bearer.startsWith("Bearer ") ? new BearerToken(new SecureString(bearer.toCharArray())) : null;
+        String authHeader = context.getHeader(HttpHeaders.AUTHORIZATION);
+        return authHeader != null && authHeader.startsWith("Bearer ") ? bearerToken(authHeader.substring(7)) : null;
     }
 
     /**
@@ -91,7 +89,7 @@ public class JwtRealm extends Realm {
     @Override public void authenticate(AuthenticationToken authenticationToken, ActionListener<AuthenticationResult> listener) {
         try {
             JsonWebToken token = parseJwt(authenticationToken.credentials().toString());
-            if (untrusted) { verifyRs256(requireNonNull(jwksUrl, "jwksUrl is mandatory for untrusted provider"), token); }
+            if (jwksUrl != null) { verifyRs256(jwksUrl, token); }
 
             User user = validateJwt(systemUTC(), token);
             listener.onResponse(AuthenticationResult.success(user));

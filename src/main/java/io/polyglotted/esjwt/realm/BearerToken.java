@@ -24,9 +24,9 @@ import org.elasticsearch.xpack.core.security.authc.AuthenticationToken;
 public class BearerToken implements AuthenticationToken {
     private final SecureString token;
 
-    public static BearerToken bearerToken(String value) { return new BearerToken(new SecureString(value.toCharArray())); }
+    static BearerToken bearerToken(String value) { return new BearerToken(new SecureString(value.toCharArray())); }
 
-    BearerToken(SecureString token) { this.token = token; }
+    private BearerToken(SecureString token) { this.token = token; }
 
     @Override public String principal() { return "bearer"; }
 

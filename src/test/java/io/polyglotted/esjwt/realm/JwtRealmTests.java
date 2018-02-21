@@ -16,10 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.polyglotted.esjwt;
+package io.polyglotted.esjwt.realm;
 
-import io.polyglotted.esjwt.realm.BearerToken;
-import io.polyglotted.esjwt.realm.JwtRealm;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -28,6 +26,7 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.user.User;
 
+import static io.polyglotted.esjwt.impl.TestTokenUtil.goodToken;
 import static io.polyglotted.esjwt.impl.TestTokenUtil.testToken;
 import static io.polyglotted.esjwt.realm.BearerToken.bearerToken;
 import static java.lang.System.currentTimeMillis;
@@ -39,7 +38,8 @@ import static org.hamcrest.Matchers.nullValue;
 public class JwtRealmTests extends ESTestCase {
 
     public void testAuthenticateValidUser() {
-        BearerToken token = bearerToken(testToken(currentTimeMillis() + 10_000));
+        logger.info(goodToken());
+        BearerToken token = bearerToken(goodToken());
         createJwtRealm().authenticate(token, ActionListener.wrap(result -> {
             assertTrue(result.isAuthenticated());
             User user = result.getUser();
@@ -51,7 +51,7 @@ public class JwtRealmTests extends ESTestCase {
     }
 
     public void testAuthenticateExpiredUser() {
-        BearerToken token = bearerToken(testToken(currentTimeMillis() - 10_000));
+        BearerToken token = bearerToken(testToken(currentTimeMillis(),currentTimeMillis() - 10_000));
         createJwtRealm().authenticate(token, ActionListener.wrap(result -> {
             assertFalse(result.isAuthenticated());
             assertThat(result.getUser(), nullValue());
