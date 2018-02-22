@@ -20,6 +20,7 @@ import org.elasticsearch.gradle.MavenFilteringHack
 import org.elasticsearch.gradle.VersionProperties
 import org.elasticsearch.gradle.test.RestIntegTestTask
 
+group = 'io.polyglotted'
 version = '6.2.2'
 
 buildscript {
@@ -30,7 +31,6 @@ buildscript {
         }
     }
 
-
     dependencies {
         classpath "org.elasticsearch.gradle:build-tools:6.2.2"
     }
@@ -39,6 +39,8 @@ buildscript {
 apply plugin: 'elasticsearch.build'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 repositories {
     jcenter()
@@ -85,9 +87,9 @@ Map generateSubstitutions() {
         return version
     }
     return [
-            'version': stringSnap(version),
+            'version'      : stringSnap(version),
             'xpack.version': stringSnap(VersionProperties.elasticsearch),
-            'java.version': targetCompatibility as String
+            'java.version' : targetCompatibility as String
     ]
 }
 
@@ -95,11 +97,18 @@ processResources {
     MavenFilteringHack.filter(it, generateSubstitutions())
 }
 
-task buildZip(type:Zip, dependsOn: [jar]) {
+task buildZip(type: Zip, dependsOn: [jar]) {
     from 'build/resources/main/x-pack-extension-descriptor.properties'
     from project.jar
 }
 
+artifacts {
+    archives javadocJar, sourcesJar, buildZip
+}
+
+signing {
+    sign configurations.archives
+}
 
 RestIntegTestTask integTest = project.tasks.create('integTest', RestIntegTestTask.class) {
     runner.systemProperty 'tests.security.manager', 'false'
@@ -131,5 +140,52 @@ integTestCluster {
                 ignoreerrors: true,
                 retries: 10)
         return tmpFile.exists()
+    }
+}
+
+uploadArchives {
+    repositories {
+        def ossrhUsername = 'polyglotted'
+        def ossrhPassword = '${NEXUS_PASS}'
+
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'esjwt realm'
+                packaging 'jar'
+                description 'Elastic x-pack realm for authenticating generic json web tokens'
+                url 'https://github.com/polyglotted/esjwt-realm'
+
+                scm {
+                    connection 'scm:git:git@github.com:polyglotted/esjwt-realm.git'
+                    developerConnection 'scm:git:git@github.com:polyglotted/esjwt-realm.git'
+                    url 'https://github.com/polyglotted/es-common'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'vshank77'
+                        name 'Shankar Vasduevan'
+                        email 'shankar [at] polyglotted [dot] io'
+                    }
+                }
+            }
+        }
     }
 }
