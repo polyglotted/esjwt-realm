@@ -20,16 +20,12 @@ jobs:
           - v1-dependencies-{{ checksum "build.gradle" }}
           - v1-dependencies-
       - run:
-          name: Install Dependencies
-          command: ./gradlew clean buildZip
+          name: Gradle Check
+          command: ./gradlew check
       - save_cache:
           paths:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "build.gradle" }}
-
-      - run:
-          name: Gradle Check
-          command: ./gradlew check
 
       - run:
           name: Collect Test Artifacts
