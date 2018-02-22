@@ -42,5 +42,6 @@ jobs:
             if [[ ${COMMIT_MESSAGE} == *"prepare for release"* ]]; then
                 sudo apt-get install gnupg2 -y
                 curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
+                envsubst < "gradle.properties.tpl" > "gradle.properties"
                 ./gradlew uploadArchives
             fi
