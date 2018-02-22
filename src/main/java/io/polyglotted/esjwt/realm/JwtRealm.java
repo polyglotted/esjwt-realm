@@ -43,6 +43,7 @@ public class JwtRealm extends Realm {
     /* The type of the realm. This is defined as a static final variable to prevent typos */
     public static final String TYPE = "esjwt";
     private final String jwksUrl;
+    private final String groupsField;
 
     /**
      * Constructor for the Realm. This constructor delegates to the super class to initialize the common aspects such
@@ -53,7 +54,8 @@ public class JwtRealm extends Realm {
     JwtRealm(RealmConfig config) {
         super(TYPE, config);
         this.jwksUrl = config.settings().get("jwksUrl");
-        logger.info("loaded x-pack plugin [esjwt]");
+        this.groupsField = config.settings().get("groupsField", "cognito:groups");
+        logger.info("loaded x-pack-plugin [esjwt]");
     }
 
     /**
@@ -91,7 +93,7 @@ public class JwtRealm extends Realm {
             JsonWebToken token = parseJwt(authenticationToken.credentials().toString());
             if (jwksUrl != null) { verifyRs256(jwksUrl, token); }
 
-            User user = validateJwt(systemUTC(), token);
+            User user = validateJwt(systemUTC(), token, groupsField);
             listener.onResponse(AuthenticationResult.success(user));
 
         } catch (VerificationException | ValidityException ex) {

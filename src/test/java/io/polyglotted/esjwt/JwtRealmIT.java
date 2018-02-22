@@ -19,19 +19,27 @@
 package io.polyglotted.esjwt;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
 import org.apache.http.message.BasicHeader;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient;
 import org.elasticsearch.xpack.core.XPackPlugin;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
+import static io.polyglotted.esjwt.impl.TestTokenUtil.badToken;
 import static io.polyglotted.esjwt.impl.TestTokenUtil.goodToken;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.hamcrest.Matchers.is;
@@ -50,7 +58,7 @@ public class JwtRealmIT extends ESIntegTestCase {
     protected Settings externalClusterClientSettings() {
         return Settings.builder()
             .put("transport.type", "security4")
-            .put(ThreadContext.PREFIX + "." + HttpHeaders.AUTHORIZATION, "Bearer " + goodToken())
+            .put(ThreadContext.PREFIX + "." + AUTHORIZATION, "Bearer " + goodToken())
             .build();
     }
 
@@ -62,7 +70,6 @@ public class JwtRealmIT extends ESIntegTestCase {
     protected Collection<Class<? extends Plugin>> transportClientPlugins() { return Collections.singleton(XPackPlugin.class); }
 
     public void testHttpConnectionWithNoAuthentication() throws Exception {
-        ensureYellow();
         try {
             Response bad = getRestClient().performRequest("GET", "/", Collections.emptyMap());
             fail("an exception should be thrown but got: " + bad.getEntity().toString());
@@ -74,9 +81,46 @@ public class JwtRealmIT extends ESIntegTestCase {
     }
 
     public void testHttpAuthentication() throws Exception {
-        ensureYellow();
         Response response = getRestClient().performRequest("GET", "/", Collections.emptyMap(), (HttpEntity) null,
             new BasicHeader(AUTHORIZATION, "Bearer " + goodToken()));
         assertThat(response.getStatusLine().getStatusCode(), is(200));
+    }
+
+    public void testTransportClient() throws Exception {
+        NodesInfoResponse nodeInfos = client().admin().cluster().prepareNodesInfo().get();
+        List<NodeInfo> nodes = nodeInfos.getNodes();
+        assertTrue(nodes.size() > 0);
+        TransportAddress publishAddress = randomFrom(nodes).getTransport().address().publishAddress();
+        String clusterName = nodeInfos.getClusterName().value();
+
+        Settings settings = Settings.builder()
+            .put("cluster.name", clusterName)
+            .put(ThreadContext.PREFIX + "." + AUTHORIZATION, "Bearer " + goodToken())
+            .build();
+        try (TransportClient client = new PreBuiltXPackTransportClient(settings)) {
+            client.addTransportAddress(publishAddress);
+            ClusterHealthResponse response = client.admin().cluster().prepareHealth().execute().actionGet();
+            assertThat(response.isTimedOut(), is(false));
+        }
+    }
+
+    public void testTransportClientWrongAuthentication() throws Exception {
+        NodesInfoResponse nodeInfos = client().admin().cluster().prepareNodesInfo().get();
+        List<NodeInfo> nodes = nodeInfos.getNodes();
+        assertTrue(nodes.size() > 0);
+        TransportAddress publishAddress = randomFrom(nodes).getTransport().address().publishAddress();
+        String clusterName = nodeInfos.getClusterName().value();
+
+        Settings settings = Settings.builder()
+                .put("cluster.name", clusterName)
+                .put(ThreadContext.PREFIX + "." + AUTHORIZATION, "Bearer " + badToken())
+                .build();
+        try (TransportClient client = new PreBuiltXPackTransportClient(settings)) {
+            client.addTransportAddress(publishAddress);
+            client.admin().cluster().prepareHealth().execute().actionGet();
+            fail("authentication failure should have resulted in a NoNodesAvailableException");
+        } catch (NoNodeAvailableException e) {
+            // expected
+        }
     }
 }

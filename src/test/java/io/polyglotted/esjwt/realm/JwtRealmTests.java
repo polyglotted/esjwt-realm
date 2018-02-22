@@ -26,10 +26,9 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.user.User;
 
+import static io.polyglotted.esjwt.impl.TestTokenUtil.badToken;
 import static io.polyglotted.esjwt.impl.TestTokenUtil.goodToken;
-import static io.polyglotted.esjwt.impl.TestTokenUtil.testToken;
 import static io.polyglotted.esjwt.realm.BearerToken.bearerToken;
-import static java.lang.System.currentTimeMillis;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -44,14 +43,14 @@ public class JwtRealmTests extends ESTestCase {
             assertTrue(result.isAuthenticated());
             User user = result.getUser();
             assertThat(user, notNullValue());
-            assertThat(user.roles(), arrayContaining("jwt-user"));
+            assertThat(user.roles(), arrayContaining("jwt_user", "superuser"));
             assertThat(user.principal(), equalTo("abcdef1234ghij"));
             assertThat(user.email(), equalTo("tester@test.com"));
         }, e -> fail("Failed with exception: " + e.getMessage())));
     }
 
     public void testAuthenticateExpiredUser() {
-        BearerToken token = bearerToken(testToken(currentTimeMillis(),currentTimeMillis() - 10_000));
+        BearerToken token = bearerToken(badToken());
         createJwtRealm().authenticate(token, ActionListener.wrap(result -> {
             assertFalse(result.isAuthenticated());
             assertThat(result.getUser(), nullValue());

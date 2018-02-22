@@ -28,11 +28,11 @@ import static java.time.ZoneOffset.UTC;
 
 public abstract class JwtValidator {
 
-    public static User validateJwt(Clock clock, JsonWebToken token) throws ValidityException {
+    public static User validateJwt(Clock clock, JsonWebToken token, String groupsField) throws ValidityException {
         validateBefore(clock, token.notBefore());
         validateBefore(clock, token.issuedAt());
         validateAfter(clock, token.expiresAt());
-        return token.buildUser();
+        return token.buildUser(groupsField);
     }
 
     static void validateBefore(Clock clock, Long time) throws ValidityException {

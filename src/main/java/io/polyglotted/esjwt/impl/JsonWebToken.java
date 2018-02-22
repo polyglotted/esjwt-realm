@@ -18,10 +18,11 @@
  */
 package io.polyglotted.esjwt.impl;
 
-import lombok.experimental.Accessors;
 import org.elasticsearch.xpack.core.security.user.User;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -32,7 +33,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 
-@Accessors(fluent = true)
 public final class JsonWebToken {
     private static Pattern EMAIL_REGEX = Pattern.compile("(?:[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]" +
         "+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(" +
@@ -67,8 +67,18 @@ public final class JsonWebToken {
 
     Long issuedAt() { return asTime(payload, "iat"); }
 
-    User buildUser() {
-        return new User(userId(payload), new String[]{"jwt-user"}, null, email(payload), payload, true);
+    User buildUser(String groupsField) {
+        return new User(userId(payload), groupsToRoles(payload, groupsField), null, email(payload), payload, true);
+    }
+
+    @SuppressWarnings("unchecked") private static String[] groupsToRoles(Map<String, Object> claims, String groupsField) {
+        List<String> roles = new LinkedList<>();
+        roles.add("jwt_user");
+        if(claims.containsKey(groupsField)) {
+            List<String> groups = (List<String>) claims.get(groupsField);
+            for(String group : groups) { roles.add(group.toLowerCase(ENGLISH)); }
+        }
+        return roles.toArray(new String[roles.size()]);
     }
 
     private static String userId(Map<String, Object> claims) { return (String) claims.getOrDefault("uid", claims.get("sub")); }

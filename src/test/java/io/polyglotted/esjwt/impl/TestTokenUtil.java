@@ -33,7 +33,9 @@ public abstract class TestTokenUtil {
 
     public static String goodToken() { return testToken(currentTimeMillis(), currentTimeMillis() + TEN_MINS); }
 
-    public static String testToken(long iat, long exp) {
+    public static String badToken() { return testToken(currentTimeMillis(), currentTimeMillis() - 10_000); }
+
+    private static String testToken(long iat, long exp) {
         String contentBytes = encodeBase64String(header().getBytes(UTF_8)) + "." +
             encodeBase64String(payload((int) (iat / 1000), (int) (exp / 1000)).getBytes(UTF_8));
         return contentBytes + "." + encodeBase64String(sign(contentBytes));
@@ -54,8 +56,8 @@ public abstract class TestTokenUtil {
 
     private static String payload(int issuedAt, int expiry) {
         return "{\"ver\":1,\"jti\":\"AT.E5kNYVzhMWHeA9KtVWmgTuhepSxBJhODPWD1YT1KieQ\"," +
-            "\"iss\":\"https://dummy.oktapreview.com/oauth2/default\",\"aud\":\"api://default\"," +
+            "\"iss\":\"https://dummy.dummy.com/oauth2/default\",\"aud\":\"api://default\"," +
             "\"iat\":" + issuedAt + ",\"exp\":" + expiry + ",\"uid\":\"abcdef1234ghij\"," +
-            "\"scp\":[\"openid\",\"address\",\"phone\",\"profile\",\"email\"],\"sub\":\"tester@test.com\"}";
+            "\"cognito:groups\":[\"SUPERUSER\"],\"scp\":[\"openid\",\"profile\",\"email\"],\"sub\":\"tester@test.com\"}";
     }
 }

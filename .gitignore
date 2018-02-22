@@ -20,6 +20,3 @@ html_docs
 
 dependency-reduced-pom.xml
 classes
-gradle/
-gradlew
-gradlew.bat

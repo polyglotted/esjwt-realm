@@ -6,7 +6,7 @@ jobs:
     working_directory: ~/esjwt-realm
     environment:
       GRADLE_OPTS: -Xmx3200m
-      artifact_dir: "tmp/artifacts"
+      artifact_dir: "artifacts"
 
     steps:
       - checkout
@@ -14,10 +14,6 @@ jobs:
           name: Setup Build Variables
           command: |
             echo 'export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"' >> $BASH_ENV
-      - run:
-          name: Echo Me
-          command: |
-            echo $JAVA_HOME
 
       - restore_cache:
           keys:
@@ -25,7 +21,7 @@ jobs:
           - v1-dependencies-
       - run:
           name: Install Dependencies
-          command: gradle clean buildZip
+          command: ./gradlew clean buildZip
       - save_cache:
           paths:
             - ~/.gradle
@@ -33,14 +29,13 @@ jobs:
 
       - run:
           name: Gradle Check
-          command: gradle clean check
+          command: ~/gradlew clean check
 
       - run:
           name: Collect Test Artifacts
           command: |
             mkdir -p ${artifact_dir}/reports/ ${artifact_dir}/output/
             cp -r build/reports ${artifact_dir}/reports/
-            cp build/resources/main/* ${artifact_dir}/output/
           when: always
       - store_artifacts:
           path: tmp/artifacts
