@@ -16,9 +16,11 @@ jobs:
             echo 'export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"' >> $BASH_ENV
 
       - run:
-          name: Setup Gradle Properties
+          name: Setup Tools
           command: |
-            sudo apt-get install gettext -y
+            sudo apt-get install gettext gnupg2 -y
+            curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
+            gpg2 --list-keys && gpg2 --list-secret-keys
             envsubst < "gradle.properties.tpl" > "gradle.properties"
 
       - restore_cache:
@@ -46,7 +48,5 @@ jobs:
           name: Maven Deploy
           command: |
             if [[ ${COMMIT_MESSAGE} == *"prepare for release"* ]]; then
-                sudo apt-get install gnupg2 -y
-                curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
                 ./gradlew uploadArchives
             fi
