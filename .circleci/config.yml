@@ -29,7 +29,7 @@ jobs:
 
       - run:
           name: Gradle Check
-          command: ~/gradlew clean check
+          command: ./gradlew check
 
       - run:
           name: Collect Test Artifacts
