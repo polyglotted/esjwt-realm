@@ -40,14 +40,11 @@ jobs:
       - store_artifacts:
           path: tmp/artifacts
 
-      - run:
-          name: Install GnuPg if not already
-          command: sudo apt-get install gnupg2 -y
-
-      - run:
-          name: Import GPG Keys
-          command: curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
-
-      - run:
-          name: Upload Archives
-          command: ./gradlew uploadArchives
+      - deploy:
+          name: Maven Deploy
+          command: |
+            if [[ ${COMMIT_MESSAGE} == *"prepare for release"* ]]; then
+                sudo apt-get install gnupg2 -y
+                curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
+                ./gradlew uploadArchives
+            fi

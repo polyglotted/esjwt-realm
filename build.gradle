@@ -145,9 +145,6 @@ integTestCluster {
 
 uploadArchives {
     repositories {
-        def ossrhUsername = 'polyglotted'
-        def ossrhPassword = '${NEXUS_PASS}'
-
         mavenDeployer {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
