@@ -20,6 +20,7 @@ jobs:
           command: |
             sudo apt-get install gettext gnupg2 -y
             curl ${GPG_OUT} -o private.key && gpg2 --allow-secret-key-import --import private.key
+            gpg2 --export-secret-key ${GPG_KEYID} > secring.gpg
             envsubst < "gradle.properties.tpl" > "gradle.properties"
 
       - restore_cache:
