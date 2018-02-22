@@ -14,6 +14,11 @@ jobs:
           name: Setup Build Variables
           command: |
             echo 'export COMMIT_MESSAGE="$(git log --format=oneline -n 1 $CIRCLE_SHA1)"' >> $BASH_ENV
+
+      - run:
+          name: Setup Gradle Properties
+          command: |
+            sudo apt-get install gettext -y
             envsubst < "gradle.properties.tpl" > "gradle.properties"
 
       - restore_cache:
