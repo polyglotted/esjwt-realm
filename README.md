@@ -2,7 +2,7 @@
 Simple JWT Realm Elastic X-pack Extension
 
 ### Continuous Integration
-[![CircleCI](https://circleci.com/gh/polyglotted/esjwt-realm.svg?style=svg)](https://circleci.com/gh/polyglotted/esjwt-realm)  [![Known Vulnerabilities](https://snyk.io/test/github/polyglotted/esjwt-realm/badge.svg?type=shield)](https://snyk.io/test/github/polyglotted/esjwt-realm?targetFile=build.gradle)  [![Maintainability](https://api.codeclimate.com/v1/badges/944458811f2b4fa786bc/maintainability?type=shield)](https://codeclimate.com/github/polyglotted/esjwt-realm/maintainability)
+[![CircleCI](https://circleci.com/gh/polyglotted/esjwt-realm.svg?style=shield)](https://circleci.com/gh/polyglotted/esjwt-realm)  [![Known Vulnerabilities](https://snyk.io/test/github/polyglotted/esjwt-realm/badge.svg?type=shield)](https://snyk.io/test/github/polyglotted/esjwt-realm?targetFile=build.gradle)  [![Maintainability](https://api.codeclimate.com/v1/badges/944458811f2b4fa786bc/maintainability?type=shield)](https://codeclimate.com/github/polyglotted/esjwt-realm/maintainability)
 
 #### Distribution
 
