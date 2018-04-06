@@ -17,6 +17,7 @@ docs/build.log
 backwards/
 html_docs
 .vagrant/
+gradle.properties
 
 dependency-reduced-pom.xml
 classes

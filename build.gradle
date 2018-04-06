@@ -21,7 +21,7 @@ import org.elasticsearch.gradle.VersionProperties
 import org.elasticsearch.gradle.test.RestIntegTestTask
 
 group = 'io.polyglotted'
-version = '6.2.2'
+version = '6.2.3'
 
 buildscript {
     repositories {
@@ -32,7 +32,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "org.elasticsearch.gradle:build-tools:6.2.2"
+        classpath "org.elasticsearch.gradle:build-tools:6.2.3"
     }
 }
 
